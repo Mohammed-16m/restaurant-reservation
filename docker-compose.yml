@@ -1,0 +1,47 @@
+version: '3.9'
+
+services:
+
+  # Base de données du notification worker
+  db_notification:
+    image: postgres:15
+    environment:
+      POSTGRES_DB: notification_db
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: postgres
+    volumes:
+      - db_notification_data:/var/lib/postgresql/data
+
+  # RabbitMQ
+  rabbitmq:
+    image: rabbitmq:3-management
+    ports:
+      - "5672:5672"
+      - "15672:15672"
+    environment:
+      RABBITMQ_DEFAULT_USER: guest
+      RABBITMQ_DEFAULT_PASS: guest
+    volumes:
+      - rabbitmq_data:/var/lib/rabbitmq
+
+  # Notification Worker
+  notification_worker:
+    build: .
+    depends_on:
+      - db_notification
+      - rabbitmq
+    environment:
+      SECRET_KEY: ma-cle-secrete-django
+      DB_NAME: notification_db
+      DB_USER: postgres
+      DB_PASSWORD: postgres
+      DB_HOST: db_notification
+      DB_PORT: 5432
+      RABBITMQ_HOST: rabbitmq
+      EMAIL_USER: ${EMAIL_USER}
+      EMAIL_PASSWORD: ${EMAIL_PASSWORD}
+      EMAIL_FROM: ${EMAIL_FROM}
+
+volumes:
+  db_notification_data:
+  rabbitmq_data:
